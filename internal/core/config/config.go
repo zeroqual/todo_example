@@ -1,6 +1,9 @@
 package core_config
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 type Config struct {
 	Server   ServerConfig
@@ -34,6 +37,9 @@ type DatabaseConfig struct {
 	Name     string
 }
 
+func (c *DatabaseConfig) GetDsn() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", c.User, c.Password, c.Host, c.Port, c.Name)
+}
 func loadDbConfig() DatabaseConfig {
 	return DatabaseConfig{
 		User:     getEnv("POSTGRES_USER", ""),
