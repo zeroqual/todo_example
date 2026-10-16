@@ -40,6 +40,9 @@ func Start(cfg *core_config.Config, pool *pgxpool.Pool) error {
 	{
 		//routes here
 		publicRoutes.POST("/create", todoHandler.CreateTodo)
+		publicRoutes.GET("/get", todoHandler.GetTodoByID)
+		publicRoutes.POST("/complete", todoHandler.SetTodoCompleted)
+		publicRoutes.DELETE("/delete", todoHandler.DeleteTodo)
 	}
 
 	server := http.Server{
@@ -62,6 +65,7 @@ func Start(cfg *core_config.Config, pool *pgxpool.Pool) error {
 
 	select {
 	case err := <-serverError:
+		pool.Close()
 		return fmt.Errorf("failed to start server: %v", err)
 	case sig := <-closer:
 		slog.Info("got signal", "signal", sig)
@@ -69,10 +73,12 @@ func Start(cfg *core_config.Config, pool *pgxpool.Pool) error {
 		defer cancel()
 
 		if err := server.Shutdown(ctx); err != nil {
+			pool.Close()
 			return server.Close()
 		}
 
 		// gracefull shutdown done
+		pool.Close()
 
 		slog.Info("successfully shutdown server")
 	}
